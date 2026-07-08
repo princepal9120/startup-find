@@ -11,6 +11,23 @@ Converted from the ExploreYC project
 into a self-contained CLI. Ergonomics modeled on
 [jackwener/opencli](https://github.com/jackwener/opencli).
 
+## Why local-first?
+
+Everything stays on **your** machine. `startup-find` never phones home, never
+needs an account, and never sends your queries anywhere. The first time you run
+a query on an empty database, it reminds you to seed:
+
+```
+Your local database is empty. Seed it first (data stays on YOUR machine):
+  startup-find seed           # Y Combinator (public Algolia, no key)
+  startup-find seed-a16z      # a16z portfolio
+All data is stored locally in SQLite — nothing leaves your computer.
+```
+
+Seed once, then query forever offline. Perfect for personal research, building
+your own tools on top of YC/a16z data, or letting an AI coding agent pull
+startup facts without burning an API quota.
+
 ## Install
 
 ```bash

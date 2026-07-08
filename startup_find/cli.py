@@ -19,7 +19,8 @@ import sys
 from datetime import datetime, timezone
 
 from .__version__ import __version__
-from .db import (DEFAULT_DB, q_companies, q_stats, q_batches, q_company, coerce)
+from .db import (DEFAULT_DB, q_companies, q_stats, q_batches, q_company, coerce,
+               ensure_seeded)
 from . import yc, a16z, serve
 
 
@@ -89,6 +90,7 @@ def cmd_seed_a16z(args):
 
 
 def cmd_companies(args):
+    ensure_seeded(args.db)
     rows = q_companies(args.db, args.limit, args.offset, args.batch, args.industry,
                        args.country, args.is_hiring, args.top_company, args.search, args.source)
     if not rows:
@@ -97,6 +99,7 @@ def cmd_companies(args):
 
 
 def cmd_search(args):
+    ensure_seeded(args.db)
     rows = q_companies(args.db, args.limit, 0, None, None, None, None, None, args.q, args.source)
     if not rows:
         _empty_exit()
@@ -104,14 +107,17 @@ def cmd_search(args):
 
 
 def cmd_stats(args):
+    ensure_seeded(args.db)
     _emit(q_stats(args.db), args)
 
 
 def cmd_batches(args):
+    ensure_seeded(args.db)
     _emit(q_batches(args.db), args)
 
 
 def cmd_company(args):
+    ensure_seeded(args.db)
     row = q_company(args.db, args.id, args.slug)
     if not row:
         _empty_exit()
@@ -119,6 +125,7 @@ def cmd_company(args):
 
 
 def cmd_digest(args):
+    ensure_seeded(args.db)
     stats = q_stats(args.db)
     batches = q_batches(args.db)
     newest = batches[0] if batches else None

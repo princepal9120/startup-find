@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import sys
 from datetime import datetime, timezone
 
 DEFAULT_DB = os.path.expanduser("~/.startup-find/yc.db")
@@ -99,6 +100,32 @@ def q_companies(db_path, limit, offset, batch, industry, country,
     rows = [coerce(r) for r in conn.execute(sql, params).fetchall()]
     conn.close()
     return rows
+
+
+def db_is_empty(db_path: str) -> bool:
+    """True if the companies table does not exist or has zero rows."""
+    try:
+        conn = get_conn(db_path)
+        n = conn.execute("SELECT COUNT(*) FROM companies").fetchone()[0]
+        conn.close()
+        return n == 0
+    except sqlite3.OperationalError:
+        return True
+
+
+SEED_HINT = (
+    "\nYour local database is empty. Seed it first (data stays on YOUR machine):\n"
+    "  startup-find seed           # Y Combinator (public Algolia, no key)\n"
+    "  startup-find seed-a16z      # a16z portfolio\n"
+    "All data is stored locally in SQLite — nothing leaves your computer.\n"
+)
+
+
+def ensure_seeded(db_path: str):
+    """Print a one-time hint if the local DB has no data yet. Never errors."""
+    if db_is_empty(db_path):
+        sys.stderr.write(SEED_HINT)
+
 
 
 def q_stats(db_path):
