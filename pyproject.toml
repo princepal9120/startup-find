@@ -21,6 +21,8 @@ dependencies = []
 
 [project.optional-dependencies]
 yaml = ["pyyaml"]
+dev = ["pytest>=8.0"]
+test = ["pytest>=8.0"]
 
 [project.scripts]
 startup-find = "startup_find.cli:main"
