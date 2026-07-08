@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "startup-find"
+version = "0.1.0"
+description = "Local, agent-friendly CLI for YC + a16z startup data. Seeds public datasets into SQLite, serves offline queries for AI coding agents."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["yc", "ycombinator", "a16z", "startups", "cli", "agent", "sqlite", "exploreyc"]
+authors = [{ name = "Prince Pal", email = "princepal9120@gmail.com" }]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+
+[project.optional-dependencies]
+yaml = ["pyyaml"]
+
+[project.scripts]
+startup-find = "startup_find.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/princepal9120/startup-find"
+Repository = "https://github.com/princepal9120/startup-find"
+
+[tool.hatch.build.targets.wheel]
+packages = ["startup_find"]
