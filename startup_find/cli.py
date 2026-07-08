@@ -65,11 +65,23 @@ def _empty_exit():
     raise SystemExit(66)
 
 
-def _common_args():
+def _common_args(*, suppress_defaults: bool = False):
+    """Shared CLI flags. Subparsers use suppress_defaults so global flags
+    parsed before the subcommand are not overwritten by subparser defaults."""
     parent = argparse.ArgumentParser(add_help=False)
-    parent.add_argument("--db", default=DEFAULT_DB, help=f"SQLite path (default {DEFAULT_DB})")
-    parent.add_argument("--format", default="table", choices=["table", "json", "yaml", "csv"])
-    parent.add_argument("--agent", action="store_true", help="compact JSON for AI agent tool use")
+    if suppress_defaults:
+        parent.add_argument("--db", default=argparse.SUPPRESS,
+                            help=f"SQLite path (default {DEFAULT_DB})")
+        parent.add_argument("--format", default=argparse.SUPPRESS,
+                            choices=["table", "json", "yaml", "csv"])
+        parent.add_argument("--agent", default=argparse.SUPPRESS, action="store_true",
+                            help="compact JSON for AI agent tool use")
+    else:
+        parent.add_argument("--db", default=DEFAULT_DB,
+                            help=f"SQLite path (default {DEFAULT_DB})")
+        parent.add_argument("--format", default="table", choices=["table", "json", "yaml", "csv"])
+        parent.add_argument("--agent", action="store_true",
+                            help="compact JSON for AI agent tool use")
     return parent
 
 
@@ -145,7 +157,7 @@ def cmd_digest(args):
 
 
 def cmd_serve(args):
-    serve.serve(args.host, args.port)
+    serve.serve(args.host, args.port, db=args.db)
 
 
 def cmd_skill(args):
@@ -169,17 +181,18 @@ def build_parser():
     p.add_argument("--version", action="version", version=f"startup-find {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    s = sub.add_parser("seed", help="Pull YC companies into local SQLite", parents=[parent])
+    sub_parent = _common_args(suppress_defaults=True)
+    s = sub.add_parser("seed", help="Pull YC companies into local SQLite", parents=[sub_parent])
     s.add_argument("--batch", help="comma-separated batches e.g. 'Summer 2025,Winter 2025'")
     s.add_argument("--hits", type=int, default=1000)
     s.add_argument("--max-pages", type=int, default=10)
     s.set_defaults(func=cmd_seed)
 
-    s = sub.add_parser("seed-a16z", help="Pull a16z portfolio into local SQLite", parents=[parent])
+    s = sub.add_parser("seed-a16z", help="Pull a16z portfolio into local SQLite", parents=[sub_parent])
     s.add_argument("--limit", type=int, default=None, help="only first N (smoke test)")
     s.set_defaults(func=cmd_seed_a16z)
 
-    s = sub.add_parser("companies", help="List/filter companies", parents=[parent])
+    s = sub.add_parser("companies", help="List/filter companies", parents=[sub_parent])
     s.add_argument("--limit", type=int, default=50)
     s.add_argument("--offset", type=int, default=0)
     s.add_argument("--source", default=None, help="yc | a16z | (omit = all)")
@@ -191,34 +204,34 @@ def build_parser():
     s.add_argument("--search")
     s.set_defaults(func=cmd_companies)
 
-    s = sub.add_parser("search", help="Full-text search", parents=[parent])
+    s = sub.add_parser("search", help="Full-text search", parents=[sub_parent])
     s.add_argument("q")
     s.add_argument("--limit", type=int, default=50)
     s.add_argument("--source", default=None)
     s.set_defaults(func=cmd_search)
 
-    s = sub.add_parser("stats", help="Portfolio stats", parents=[parent])
+    s = sub.add_parser("stats", help="Portfolio stats", parents=[sub_parent])
     s.set_defaults(func=cmd_stats)
 
-    s = sub.add_parser("batches", help="Distinct batches", parents=[parent])
+    s = sub.add_parser("batches", help="Distinct batches", parents=[sub_parent])
     s.set_defaults(func=cmd_batches)
 
-    s = sub.add_parser("company", help="One company by id or slug", parents=[parent])
+    s = sub.add_parser("company", help="One company by id or slug", parents=[sub_parent])
     g = s.add_mutually_exclusive_group(required=True)
     g.add_argument("--id", type=int)
     g.add_argument("--slug")
     s.set_defaults(func=cmd_company)
 
-    s = sub.add_parser("digest", help="Daily agent digest (offline)", parents=[parent])
+    s = sub.add_parser("digest", help="Daily agent digest (offline)", parents=[sub_parent])
     s.add_argument("--limit", type=int, default=15)
     s.set_defaults(func=cmd_digest)
 
-    s = sub.add_parser("serve", help="Local HTTP API for non-Python agents", parents=[parent])
+    s = sub.add_parser("serve", help="Local HTTP API for non-Python agents", parents=[sub_parent])
     s.add_argument("--host", default="127.0.0.1")
     s.add_argument("--port", type=int, default=8731)
     s.set_defaults(func=cmd_serve)
 
-    s = sub.add_parser("skill", help="Print SKILL.md for AI agent discovery", parents=[parent])
+    s = sub.add_parser("skill", help="Print SKILL.md for AI agent discovery", parents=[sub_parent])
     s.set_defaults(func=cmd_skill)
 
     return p

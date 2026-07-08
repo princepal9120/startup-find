@@ -10,6 +10,8 @@ from .db import (q_companies, q_stats, q_batches, q_company, get_conn,
 
 
 class Handler(BaseHTTPRequestHandler):
+    default_db = DEFAULT_DB
+
     def _send(self, code: int, payload):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(code)
@@ -25,7 +27,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         qs = {k: v[0] for k, v in parse_qs(parsed.query).items()}
-        db = qs.get("db", DEFAULT_DB)
+        db = qs.get("db", self.default_db)
         path = parsed.path.rstrip("/") or "/"
 
         try:
@@ -62,7 +64,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(500, {"error": str(e)})
 
 
-def serve(host: str = "127.0.0.1", port: int = 8731):
+def serve(host: str = "127.0.0.1", port: int = 8731, db: str = DEFAULT_DB):
+    Handler.default_db = db  # type: ignore[attr-defined]
     httpd = ThreadingHTTPServer((host, port), Handler)
     print(f"startup-find serving on http://{host}:{port}  (Ctrl-C to stop)")
     print("  GET /stats  /batches  /companies?batch=...&is_hiring=true  "
