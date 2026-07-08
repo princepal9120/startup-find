@@ -44,15 +44,18 @@ def _emit(data, args):
     else:  # table
         if isinstance(data, list):
             for c in data:
-                loc = c.get("all_locations") or c.get("country") or ""
-                line = f"  - {c.get('name')} [{c.get('batch') or c.get('source')}] ({c.get('industry')})"
-                if loc:
-                    line += f" · {loc}"
-                if c.get("is_hiring"):
-                    line += " · hiring"
-                print(line)
-                if c.get("one_liner"):
-                    print(f"      {c.get('one_liner')}")
+                if isinstance(c, dict):
+                    loc = c.get("all_locations") or c.get("country") or ""
+                    line = f"  - {c.get('name')} [{c.get('batch') or c.get('source')}] ({c.get('industry')})"
+                    if loc:
+                        line += f" · {loc}"
+                    if c.get("is_hiring"):
+                        line += " · hiring"
+                    print(line)
+                    if c.get("one_liner"):
+                        print(f"      {c.get('one_liner')}")
+                else:
+                    print(f"  - {c}")
         else:
             print(json.dumps(data, indent=2, ensure_ascii=False))
 
