@@ -164,41 +164,89 @@
       </div>
     </div>
 
-    <!-- Commands Terminal Window Section -->
-    <section id="install" class="border-t border-border py-12">
-      <div class="flex items-center gap-2 mb-6 font-mono">
+    <!-- Demo Image Section -->
+    <section id="demo" class="border-t border-border py-12">
+      <div class="flex items-center gap-2 mb-8 font-mono">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[#FB651E]"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
         <span class="text-muted-foreground">$</span>
-        <h2 class="text-xl font-bold">Interactive Terminal</h2>
+        <h2 class="text-xl font-bold">In Action</h2>
       </div>
 
-      <div class="terminal-window max-w-4xl border border-[#FB651E]/30 bg-black/50 backdrop-blur-md rounded-xl overflow-hidden shadow-[0_0_30px_rgba(251,101,30,0.1)]">
-        <div class="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-black/40">
+      <div class="max-w-5xl mx-auto border border-[#FB651E]/30 bg-black/50 backdrop-blur-md rounded-xl overflow-hidden shadow-[0_0_40px_rgba(251,101,30,0.15)] relative">
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-border/50 bg-black/60 relative z-10">
           <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
           <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
           <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
-          <span class="ml-4 font-mono text-xs text-muted-foreground">startup-find — zsh</span>
+          <span class="ml-4 font-mono text-xs text-muted-foreground">startup-find — demo</span>
         </div>
-        <div class="p-6 font-mono text-sm leading-relaxed overflow-x-auto text-muted-foreground">
-          <div class="mb-4">
-            <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">pip install startup-find</span><br>
-            <span>Successfully installed startup-find-0.1.0</span>
-          </div>
-          <div class="mb-4">
-            <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">startup-find seed</span> <span class="text-muted-foreground"># Seed SQLite from public YC Algolia</span><br>
-            <span>Seeding YC from public Algolia into ~/.startup-find/yc.db ...</span><br>
-            <span>DONE: 5803 YC companies stored</span>
-          </div>
-          <div class="mb-4">
-            <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">startup-find search "ai agent" --limit 3</span><br>
-            <span class="text-white">  - Cognition</span> <span class="text-emerald-400">[S24]</span> (AI) · SF<br>
-            <span class="text-white">  - Factory</span> <span class="text-emerald-400">[W24]</span> (Dev Tools) · SF<br>
-            <span class="text-white">  - Induced AI</span> <span class="text-emerald-400">[S23]</span> (AI) · SF · <span class="text-emerald-400">hiring</span>
-          </div>
-          <div>
-            <span class="text-[#FB651E]">&gt;</span> <span class="animate-pulse inline-block w-2 h-4 bg-foreground align-middle"></span>
+        <img src="demo.png" alt="startup-find CLI Demo" class="w-full h-auto block" />
+      </div>
+    </section>
+
+    <!-- Detailed Command Docs -->
+    <section id="docs" class="border-t border-border py-12">
+      <div class="flex items-center gap-2 mb-8 font-mono">
+        <span class="text-muted-foreground">$</span>
+        <h2 class="text-xl font-bold">Detailed Command Reference</h2>
+      </div>
+
+      <div class="space-y-6 max-w-4xl">
+        
+        <!-- Installation -->
+        <div class="hacker-card glow-blue p-6 rounded-xl">
+          <h3 class="font-bold font-mono text-foreground mb-4 flex items-center gap-2">
+            <span class="text-blue-500">#</span> Installation
+          </h3>
+          <div class="terminal-window p-4 border-border/50 bg-black/40">
+            <div class="font-mono text-sm">
+              <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">pip install startup-find</span><br>
+            </div>
           </div>
         </div>
+
+        <!-- Seeding Data -->
+        <div class="hacker-card glow-green p-6 rounded-xl">
+          <h3 class="font-bold font-mono text-foreground mb-4 flex items-center gap-2">
+            <span class="text-emerald-500">#</span> Seeding Data
+          </h3>
+          <p class="text-muted-foreground text-sm font-mono mb-4">Pull the latest public YC and a16z datasets into your local SQLite db.</p>
+          <div class="terminal-window p-4 border-border/50 bg-black/40">
+            <div class="font-mono text-sm text-muted-foreground">
+              <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">startup-find seed</span><br>
+              <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">startup-find seed --source a16z</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Searching -->
+        <div class="hacker-card glow-orange p-6 rounded-xl">
+          <h3 class="font-bold font-mono text-foreground mb-4 flex items-center gap-2">
+            <span class="text-[#FB651E]">#</span> Search &amp; Filter
+          </h3>
+          <p class="text-muted-foreground text-sm font-mono mb-4">Rich full-text search with structured filtering.</p>
+          <div class="terminal-window p-4 border-border/50 bg-black/40">
+            <div class="font-mono text-sm text-muted-foreground">
+              <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">startup-find search "ai coding" --limit 10</span><br>
+              <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">startup-find companies --batch "W24" --industry "Developer Tools"</span><br>
+              <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">startup-find companies --is-hiring true --country "US"</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agent Integration -->
+        <div class="hacker-card glow-purple p-6 rounded-xl">
+          <h3 class="font-bold font-mono text-foreground mb-4 flex items-center gap-2">
+            <span class="text-violet-500">#</span> Agent / JSON Integration
+          </h3>
+          <p class="text-muted-foreground text-sm font-mono mb-4">Get minified, token-optimized JSON designed explicitly for LLM contexts.</p>
+          <div class="terminal-window p-4 border-border/50 bg-black/40">
+            <div class="font-mono text-sm text-muted-foreground">
+              <span class="text-[#FB651E]">&gt;</span> <span class="text-foreground">startup-find search "fintech" --agent</span><br>
+              <span class="text-white">{"results":[{"name":"Stripe","industry":"Fintech","batch":"S09"}]}</span>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
