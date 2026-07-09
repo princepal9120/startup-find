@@ -1,744 +1,576 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>startup-find — local CLI for YC + a16z startup data</title>
-
-  <!-- SEO -->
-  <meta name="description" content="startup-find: a local, agent-friendly CLI that seeds Y Combinator and a16z startup data into SQLite. No API key. No rate limits. Blazing fast offline queries." />
-  <meta name="keywords" content="YC, Y Combinator, a16z, startups, CLI, SQLite, agent, AI, opencli, exploreyc" />
-  <meta name="author" content="Prince Pal" />
-
-  <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://princepal9120.github.io/startup-find/" />
-  <meta property="og:title" content="startup-find — local CLI for YC + a16z startup data" />
-  <meta property="og:description" content="Seed YC + a16z portfolios into a local SQLite DB. Query offline, forever. Agent-friendly." />
-  <meta property="og:image" content="https://princepal9120.github.io/startup-find/hero.jpg" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="startup-find — local CLI for YC + a16z startup data" />
-  <meta name="twitter:description" content="Seed YC + a16z portfolios into a local SQLite DB. Query offline, forever. Agent-friendly." />
-  <meta name="twitter:image" content="https://princepal9120.github.io/startup-find/hero.jpg" />
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
+  <meta name="description" content="Local, agent-friendly CLI for YC + a16z startup data. Search, analyze, and build offline." />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <style>
-    /* ── Design tokens ─────────────────────────────────────────────── */
     :root {
-      --bg:         #05050d;
-      --bg2:        #0d0d1a;
-      --bg3:        #12121f;
-      --border:     rgba(255,255,255,0.07);
-      --border-hi:  rgba(255,255,255,0.14);
-      --text:       #e8e8f0;
-      --text-muted: #7b7b99;
-      --accent:     #f26522;
-      --accent2:    #7c3aed;
-      --accent3:    #22d3ee;
-      --green:      #4ade80;
-      --red:        #f87171;
-      --yellow:     #fbbf24;
-
-      --radius-sm:  6px;
-      --radius:     12px;
-      --radius-lg:  20px;
+      --primary: #FB651E;
+      --primary-hover: #E65C00;
+      
+      /* Dark theme variables by default for the hacker aesthetic */
+      --background: #0a0a0a;
+      --foreground: #e4e4e7;
+      --card: #121212;
+      --border: #27272a;
+      --border-hover: rgba(251, 101, 30, 0.4);
+      --muted: #a1a1aa;
+      
+      --color-blue: #3b82f6;
+      --color-emerald: #10b981;
+      --color-violet: #8b5cf6;
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
+    
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
+      background-color: var(--background);
+      color: var(--foreground);
+      font-family: 'Space Grotesk', system-ui, sans-serif;
       line-height: 1.6;
+      overflow-x: hidden;
+      font-size: 15px;
     }
 
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 3px; }
-
-    body::before {
-      content: '';
-      position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-      background-size: 60px 60px;
+    .font-mono {
+      font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace;
     }
 
-    .blob {
-      position: fixed; border-radius: 50%; filter: blur(120px);
-      pointer-events: none; z-index: 0; opacity: 0.35;
+    /* Background Patterns */
+    .bg-pattern {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
     }
-    .blob-1 { width: 500px; height: 500px; background: var(--accent); top: -100px; left: -150px; animation: drift1 20s ease-in-out infinite; }
-    .blob-2 { width: 400px; height: 400px; background: var(--accent2); top: 30vh; right: -100px; animation: drift2 25s ease-in-out infinite; }
-    .blob-3 { width: 300px; height: 300px; background: var(--accent3); bottom: 10vh; left: 30%; animation: drift3 18s ease-in-out infinite; }
+    
+    /* Layout */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
 
-    @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(60px,40px)} }
-    @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-40px,60px)} }
-    @keyframes drift3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,-30px)} }
-
-    .wrap { position: relative; z-index: 1; max-width: 1140px; margin: 0 auto; padding: 0 24px; }
-    section { padding: 100px 0; }
-
-    /* Nav */
-    nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-      background: rgba(5,5,13,0.7);
-      backdrop-filter: blur(20px) saturate(1.4);
-      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    /* Navbar */
+    .navbar {
       border-bottom: 1px solid var(--border);
+      background: rgba(10, 10, 10, 0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
-    .nav-inner {
-      max-width: 1140px; margin: 0 auto; padding: 0 24px;
-      height: 60px; display: flex; align-items: center; justify-content: space-between;
+    .navbar-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 4rem;
     }
-    .nav-logo {
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700; font-size: 1rem; color: var(--text);
-      text-decoration: none; display: flex; align-items: center; gap: 8px;
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-decoration: none;
+      color: var(--foreground);
     }
-    .nav-logo-icon {
-      width: 28px; height: 28px; border-radius: 7px;
-      background: linear-gradient(135deg, var(--accent) 0%, #ff8c42 100%);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 13px; font-weight: 800; color: #fff;
+    .logo svg {
+      color: var(--primary);
     }
-    .nav-links { display: flex; align-items: center; gap: 28px; }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
     .nav-links a {
-      font-size: 0.85rem; font-weight: 500; color: var(--text-muted);
-      text-decoration: none; transition: color 0.2s;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
     }
-    .nav-links a:hover { color: var(--text); }
-    .nav-cta {
-      background: var(--accent) !important; color: #fff !important;
-      padding: 6px 16px; border-radius: var(--radius-sm);
-      font-size: 0.82rem !important; font-weight: 600 !important;
+    .nav-links a:hover {
+      color: var(--foreground);
     }
-    .nav-cta:hover { opacity: 0.88; color: #fff !important; }
+    
+    /* Typography Utilities */
+    .text-primary { color: var(--primary); }
+    .text-muted { color: var(--muted); }
+    .gradient-text {
+      background: linear-gradient(to right, var(--foreground), rgba(228, 228, 231, 0.7));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
-    /* Hero */
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+      border-color: rgba(251, 101, 30, 0.5);
+    }
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      box-shadow: 0 0 20px rgba(251, 101, 30, 0.3);
+    }
+    .btn-outline {
+      background-color: rgba(255, 255, 255, 0.03);
+      border-color: var(--border);
+      color: var(--foreground);
+    }
+    .btn-outline:hover {
+      border-color: var(--border-hover);
+      background-color: rgba(251, 101, 30, 0.05);
+    }
+
+    /* Hero Section */
     .hero {
-      min-height: 100vh; display: flex; align-items: center;
-      padding-top: 60px;
+      padding: 5rem 0 4rem;
     }
-    .hero-content { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
-
-    .hero-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(242,101,34,0.12); border: 1px solid rgba(242,101,34,0.3);
-      color: var(--accent); border-radius: 100px; padding: 5px 14px;
-      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em;
-      margin-bottom: 24px; animation: fadeUp 0.6s ease both;
+    .hero-pre {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+      animation: fadeUp 0.5s ease-out;
     }
     .hero h1 {
-      font-size: clamp(2.4rem, 5vw, 3.8rem);
-      font-weight: 900; line-height: 1.08; letter-spacing: -0.03em;
-      animation: fadeUp 0.7s 0.1s ease both;
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      animation: fadeUp 0.6s ease-out 0.1s both;
     }
-    .hero h1 .accent-o { color: var(--accent); }
-    .hero h1 .accent-v { color: var(--accent2); }
-    .hero-sub {
-      margin-top: 20px; font-size: 1.05rem; color: var(--text-muted);
-      line-height: 1.7; max-width: 480px;
-      animation: fadeUp 0.7s 0.2s ease both;
+    .hero-desc {
+      font-size: 1.125rem;
+      color: var(--muted);
+      max-width: 42rem;
+      margin-bottom: 2rem;
+      animation: fadeUp 0.6s ease-out 0.2s both;
     }
-    .mono { font-family: 'JetBrains Mono', monospace; color: var(--accent3); font-size: 0.9em; }
 
-    .hero-stats {
-      display: flex; gap: 32px; margin-top: 32px;
-      animation: fadeUp 0.7s 0.3s ease both;
+    /* Inline Stats */
+    .inline-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      animation: fadeUp 0.6s ease-out 0.3s both;
     }
-    .hero-stat { display: flex; flex-direction: column; gap: 2px; }
-    .hero-stat-n {
-      font-size: 1.6rem; font-weight: 800; line-height: 1;
-      background: linear-gradient(135deg, var(--accent), #ff8c42);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    .stat-item {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
     }
-    .hero-stat-l { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; letter-spacing: 0.04em; }
+    .stat-item .dollar { color: var(--muted); }
+    .stat-item .val { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+    .stat-item .label { font-size: 0.875rem; color: var(--muted); }
 
     .hero-actions {
-      display: flex; align-items: center; gap: 16px; margin-top: 36px; flex-wrap: wrap;
-      animation: fadeUp 0.7s 0.4s ease both;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      animation: fadeUp 0.6s ease-out 0.4s both;
     }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      font-size: 0.9rem; font-weight: 600; border-radius: var(--radius-sm);
-      padding: 12px 24px; text-decoration: none; border: none; cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-    }
-    .btn:hover { transform: translateY(-2px); }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent) 0%, #ff8c42 100%);
-      color: #fff; box-shadow: 0 4px 20px rgba(242,101,34,0.35);
-    }
-    .btn-primary:hover { box-shadow: 0 8px 30px rgba(242,101,34,0.5); }
-    .btn-secondary {
-      background: rgba(255,255,255,0.06); color: var(--text);
-      border: 1px solid var(--border-hi);
-    }
-    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
 
-    /* Terminal */
-    .terminal-wrap { animation: fadeUp 0.8s 0.3s ease both; }
-    .terminal {
-      background: rgba(13,13,26,0.85);
-      border: 1px solid var(--border-hi);
-      border-radius: var(--radius-lg);
+    /* Product Hunt Badge style adaptation */
+    .ph-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      text-decoration: none;
+      color: var(--foreground);
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    .ph-badge:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Section Headers */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .section-header h2 {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    /* Hacker Cards (Bento Grid) */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 3rem;
+    }
+    .hacker-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 1.25rem;
+      position: relative;
       overflow: hidden;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
-    .terminal-bar {
-      background: rgba(255,255,255,0.04);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 16px; display: flex; align-items: center; gap: 8px;
+    .hacker-card:hover {
+      transform: translateY(-2px);
     }
-    .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
-    .td-r { background: #ff5f57; }
-    .td-y { background: #febc2e; }
-    .td-g { background: #28c840; }
-    .terminal-title {
-      margin-left: auto; margin-right: auto;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.72rem; color: var(--text-muted);
-    }
-    .terminal-body {
-      padding: 20px 22px; font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem; line-height: 1.8; min-height: 280px;
-    }
-    .t-prompt { color: var(--accent3); }
-    .t-cmd    { color: var(--text); }
-    .t-kw     { color: var(--accent); font-weight: 600; }
-    .t-arg    { color: var(--accent2); }
-    .t-str    { color: var(--green); }
-    .t-muted  { color: var(--text-muted); }
-    .t-badge  { color: var(--yellow); }
-    .t-num    { color: var(--accent3); }
-    .t-cursor { display: inline-block; width: 8px; height: 15px; background: var(--text); vertical-align: middle; animation: blink 1s step-start infinite; }
+    
+    /* Glow variants */
+    .hacker-card.glow-orange:hover { border-color: rgba(251, 101, 30, 0.6); box-shadow: 0 4px 20px rgba(251, 101, 30, 0.15); }
+    .hacker-card.glow-blue:hover { border-color: rgba(59, 130, 246, 0.6); box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15); }
+    .hacker-card.glow-green:hover { border-color: rgba(16, 185, 129, 0.6); box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15); }
+    .hacker-card.glow-purple:hover { border-color: rgba(139, 92, 246, 0.6); box-shadow: 0 4px 20px rgba(139, 92, 246, 0.15); }
 
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .card-icon {
+      width: 2rem;
+      height: 2rem;
+      margin-bottom: 1rem;
+      transition: transform 0.2s;
+    }
+    .hacker-card:hover .card-icon {
+      transform: scale(1.1);
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+    .card-desc {
+      font-size: 0.875rem;
+      color: var(--muted);
+      flex: 1;
+    }
+    .card-action {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.75rem;
+      margin-top: 1rem;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .hacker-card:hover .card-action {
+      opacity: 1;
+    }
 
-    /* Section */
-    .section-label {
-      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em;
-      color: var(--accent); text-transform: uppercase; margin-bottom: 12px;
-    }
-    .section-title {
-      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-      font-weight: 800; letter-spacing: -0.03em; line-height: 1.15;
-    }
-    .section-sub {
-      font-size: 1rem; color: var(--text-muted); margin-top: 12px; max-width: 560px;
-    }
-    .section-head { margin-bottom: 56px; }
-
-    /* Features */
-    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-    .feature-card {
-      background: rgba(13,13,26,0.6);
+    /* Code Blocks */
+    .terminal-block {
+      background: #1e1e1e;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
-      position: relative; overflow: hidden;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      overflow-x: auto;
+      margin-bottom: 1.5rem;
     }
-    .feature-card:hover { border-color: var(--border-hi); transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.4); }
-    .feature-icon {
-      width: 44px; height: 44px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.3rem; margin-bottom: 16px;
+    .terminal-block code {
+      font-size: 0.875rem;
+      color: #e4e4e7;
     }
-    .fi-o { background: rgba(242,101,34,0.15); }
-    .fi-v { background: rgba(124,58,237,0.15); }
-    .fi-c { background: rgba(34,211,238,0.15); }
-    .fi-g { background: rgba(74,222,128,0.15); }
-    .fi-y { background: rgba(251,191,36,0.15); }
-    .fi-r { background: rgba(248,113,113,0.15); }
-    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
-    .feature-card p { font-size: 0.87rem; color: var(--text-muted); line-height: 1.6; }
+    .term-prompt { color: var(--primary); }
+    .term-cmd { color: #fff; }
+    .term-arg { color: var(--color-blue); }
+    .term-str { color: var(--color-emerald); }
+    .term-out { color: var(--muted); }
+    .term-badge { color: #fbbf24; }
 
-    /* Commands */
-    .commands-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    .commands-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
-    .cmd-group h3 {
-      font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em;
-      text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px;
-    }
-    .cmd-list { display: flex; flex-direction: column; gap: 10px; }
-    .cmd-item {
-      background: rgba(255,255,255,0.03);
+    /* Footer Terminal Box */
+    .footer-terminal {
+      max-width: 56rem;
+      margin: 4rem auto;
+      padding: 1.5rem;
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 14px 16px;
-      display: flex; flex-direction: column; gap: 6px;
-      transition: border-color 0.2s, background 0.2s; cursor: default;
+      background: rgba(18, 18, 18, 0.3);
     }
-    .cmd-item:hover { border-color: rgba(242,101,34,0.3); background: rgba(242,101,34,0.04); }
-    .cmd-code { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--accent3); }
-    .cmd-code .kw { color: var(--accent); font-weight: 600; }
-    .cmd-code .fl { color: var(--accent2); }
-    .cmd-code .st { color: var(--green); }
-    .cmd-desc { font-size: 0.8rem; color: var(--text-muted); }
+    .footer-terminal .prompt-line {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.875rem;
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .footer-links a {
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.875rem;
+    }
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
 
-    /* Install */
-    .install-box {
-      background: rgba(13,13,26,0.8);
-      border: 1px solid var(--border-hi);
-      border-radius: var(--radius-lg);
-      padding: 40px 48px;
-      display: flex; flex-direction: column; gap: 28px;
-      box-shadow: 0 0 40px rgba(242,101,34,0.18);
+    /* Main Content Sections */
+    section {
+      padding: 3rem 0;
+      border-top: 1px solid var(--border);
     }
-    .install-step { display: flex; gap: 20px; align-items: flex-start; }
-    .step-num {
-      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
-      background: linear-gradient(135deg, var(--accent), #ff8c42);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.8rem; font-weight: 800; color: #fff;
-    }
-    .step-body { flex: 1; }
-    .step-body h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 8px; }
-    .code-block {
-      background: rgba(0,0,0,0.4);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 12px 16px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.78rem; color: var(--text-muted);
-      position: relative; overflow-x: auto;
-    }
-    .code-block .prompt { color: var(--accent); user-select: none; }
-    .code-block .cmd   { color: var(--text); }
-    .code-block .subcmd{ color: var(--accent); font-weight: 600; }
-    .code-block .arg   { color: var(--accent2); }
-    .code-block .str   { color: var(--green); }
-    .copy-btn {
-      position: absolute; top: 8px; right: 8px;
-      background: rgba(255,255,255,0.08); border: 1px solid var(--border);
-      color: var(--text-muted); font-size: 0.7rem; padding: 3px 8px;
-      border-radius: 4px; cursor: pointer; font-family: inherit;
-      transition: background 0.2s, color 0.2s;
-    }
-    .copy-btn:hover { background: rgba(255,255,255,0.15); color: var(--text); }
-    .copy-btn.copied { color: var(--green); border-color: var(--green); }
 
-    /* API */
-    .api-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
-    .api-routes { display: flex; flex-direction: column; gap: 10px; }
-    .api-route {
-      display: flex; align-items: center; gap: 12px;
-      background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-      border-radius: var(--radius-sm); padding: 12px 16px;
-      transition: border-color 0.2s;
-    }
-    .api-route:hover { border-color: var(--border-hi); }
-    .method {
-      font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
-      font-weight: 700; padding: 2px 8px; border-radius: 4px;
-      background: rgba(34,211,238,0.15); color: var(--accent3); flex-shrink: 0;
-    }
-    .api-path { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text); }
-    .api-desc { font-size: 0.78rem; color: var(--text-muted); margin-left: auto; }
-
-    /* Footer */
-    footer { border-top: 1px solid var(--border); padding: 40px 0; text-align: center; }
-    .footer-logo { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
-    .footer-logo span { color: var(--accent); }
-    footer p { font-size: 0.82rem; color: var(--text-muted); }
-    .footer-links { display: flex; justify-content: center; gap: 24px; margin-top: 16px; }
-    .footer-links a { font-size: 0.82rem; color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
-    .footer-links a:hover { color: var(--text); }
-
+    /* Animations */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .fade-in-up {
-      opacity: 0; transform: translateY(24px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
+    .animate-on-scroll {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease-out, transform 0.5s ease-out;
     }
-    .fade-in-up.in-view { opacity: 1; transform: translateY(0); }
+    .animate-on-scroll.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
-    @media (max-width: 900px) {
-      .hero-content { grid-template-columns: 1fr; gap: 48px; }
-      .features-grid { grid-template-columns: 1fr 1fr; }
-      .commands-grid { grid-template-columns: 1fr; }
-      .api-grid { grid-template-columns: 1fr; }
-    }
-    @media (max-width: 600px) {
-      section { padding: 64px 0; }
-      .features-grid { grid-template-columns: 1fr; }
-      .install-box { padding: 28px 20px; }
-      .hero-stats { flex-direction: column; gap: 16px; }
+    @media (max-width: 768px) {
       .nav-links { display: none; }
     }
   </style>
 </head>
-
 <body>
-<div class="blob blob-1"></div>
-<div class="blob blob-2"></div>
-<div class="blob blob-3"></div>
 
-<!-- Nav -->
-<nav>
-  <div class="nav-inner">
-    <a href="#" class="nav-logo">
-      <div class="nav-logo-icon">sf</div>
-      startup-find
-    </a>
-    <div class="nav-links">
-      <a href="#features">Features</a>
-      <a href="#commands">Commands</a>
-      <a href="#api">HTTP API</a>
-      <a href="#install">Install</a>
-      <a href="https://github.com/princepal9120/startup-find" target="_blank" rel="noopener" class="nav-cta">GitHub &rarr;</a>
-    </div>
+  <!-- Background Patterns -->
+  <div class="bg-pattern">
+    <svg class="absolute inset-0 h-full w-full opacity-20" style="color:var(--primary); position: absolute; top:0; left:0; width:100%; height:100%; opacity:0.15;">
+      <defs><pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.5" fill="currentColor"></circle></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#dots)"></rect>
+    </svg>
+    <svg class="absolute inset-0 h-full w-full opacity-30" style="color:var(--border); position: absolute; top:0; left:0; width:100%; height:100%; opacity:0.3;">
+      <defs><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="currentColor" stroke-width="0.5"></path></pattern></defs>
+      <rect width="100%" height="100%" fill="url(#grid)"></rect>
+    </svg>
   </div>
-</nav>
 
-<!-- Hero -->
-<section class="hero">
-  <div class="wrap">
-    <div class="hero-content">
-      <div>
-        <div class="hero-badge">&#x25cf; Inspired by ExploreYC &middot; OpenCLI ergonomics</div>
-        <h1>
-          YC + a16z data,<br>
-          <span class="accent-o">local</span> &amp; <span class="accent-v">offline</span>.<br>
-          No API key.
-        </h1>
-        <p class="hero-sub">
-          <span class="mono">startup-find</span> seeds Y&nbsp;Combinator and a16z portfolios into a
-          local SQLite database &mdash; then lets you query 5,800+ companies instantly,
-          forever offline, from your terminal or AI agent.
-        </p>
-
-        <div class="hero-stats">
-          <div class="hero-stat">
-            <span class="hero-stat-n">5,800+</span>
-            <span class="hero-stat-l">YC companies</span>
-          </div>
-          <div class="hero-stat">
-            <span class="hero-stat-n">0</span>
-            <span class="hero-stat-l">API keys needed</span>
-          </div>
-          <div class="hero-stat">
-            <span class="hero-stat-n">&lt;1ms</span>
-            <span class="hero-stat-l">query latency</span>
-          </div>
-        </div>
-
-        <div class="hero-actions">
-          <a href="#install" class="btn btn-primary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
-            Install now
-          </a>
-          <a href="https://github.com/princepal9120/startup-find" target="_blank" rel="noopener" class="btn btn-secondary">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
-            View on GitHub
-          </a>
-        </div>
-      </div>
-
-      <div class="terminal-wrap">
-        <div class="terminal">
-          <div class="terminal-bar">
-            <div class="terminal-dot td-r"></div>
-            <div class="terminal-dot td-y"></div>
-            <div class="terminal-dot td-g"></div>
-            <span class="terminal-title">startup-find &mdash; zsh</span>
-          </div>
-          <div class="terminal-body" id="terminal-body"></div>
-        </div>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container navbar-inner font-mono">
+      <a href="#" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+        startup-find
+      </a>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#commands">Commands</a>
+        <a href="#api">API</a>
+        <a href="https://github.com/princepal9120/startup-find" target="_blank" rel="noopener">GitHub</a>
       </div>
     </div>
-  </div>
-</section>
+  </nav>
 
-<!-- Features -->
-<section id="features">
-  <div class="wrap">
-    <div class="section-head fade-in-up">
-      <div class="section-label">Why startup-find</div>
-      <h2 class="section-title">Built for developers &amp; AI agents</h2>
-      <p class="section-sub">Everything you need to research the YC and a16z ecosystems &mdash; without a single network call after seeding.</p>
-    </div>
+  <main class="container">
+    <!-- Hero -->
+    <div class="hero">
+      <div class="hero-pre font-mono">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+        <span>$ startup-find --init</span>
+      </div>
+      
+      <h1>
+        <span class="text-primary">&gt;</span> 
+        <span class="gradient-text">Explore YC & a16z startups</span>
+      </h1>
+      
+      <p class="hero-desc font-mono">
+        Search, analyze, and build on startup data from Y Combinator and a16z — 5,800+ companies instantly accessible offline from your terminal or AI agent via SQLite.
+      </p>
 
-    <div class="features-grid">
-      <div class="feature-card fade-in-up">
-        <div class="feature-icon fi-o">&#x1F512;</div>
-        <h3>100% Local</h3>
-        <p>All data lives in a SQLite file on your machine. Nothing leaves your computer. No accounts, no telemetry.</p>
-      </div>
-      <div class="feature-card fade-in-up">
-        <div class="feature-icon fi-v">&#x26A1;</div>
-        <h3>Blazing Fast</h3>
-        <p>Sub-millisecond queries against SQLite. Filter by batch, industry, country, or hiring status instantly.</p>
-      </div>
-      <div class="feature-card fade-in-up">
-        <div class="feature-icon fi-c">&#x1F916;</div>
-        <h3>Agent-Friendly</h3>
-        <p>Pass <span class="mono">--agent</span> for compact JSON stdout. Clean exit codes (0/1/66) for shell scripting and LLM tool use.</p>
-      </div>
-      <div class="feature-card fade-in-up">
-        <div class="feature-icon fi-g">&#x1F50D;</div>
-        <h3>Full-Text Search</h3>
-        <p>Search across company names, one-liners, and descriptions. Pipe results to <span class="mono">jq</span> for custom transforms.</p>
-      </div>
-      <div class="feature-card fade-in-up">
-        <div class="feature-icon fi-y">&#x1F310;</div>
-        <h3>HTTP REST API</h3>
-        <p>Can't use Python? Run <span class="mono">startup-find serve</span> and hit a local HTTP server from any language.</p>
-      </div>
-      <div class="feature-card fade-in-up">
-        <div class="feature-icon fi-r">&#x1F4E6;</div>
-        <h3>Zero Dependencies</h3>
-        <p>Pure stdlib Python 3.9+. No pip chain to break. Optional <span class="mono">pyyaml</span> for YAML output.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Commands -->
-<section id="commands" class="commands-section">
-  <div class="wrap">
-    <div class="section-head fade-in-up">
-      <div class="section-label">Commands</div>
-      <h2 class="section-title">Everything at your fingertips</h2>
-      <p class="section-sub">Familiar subcommand patterns. Multiple output formats. Pipe-friendly.</p>
-    </div>
-
-    <div class="commands-grid">
-      <div class="cmd-group fade-in-up">
-        <h3>Seed &amp; Setup</h3>
-        <div class="cmd-list">
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> seed</div>
-            <div class="cmd-desc">Pull all YC batches from public Algolia into local SQLite</div>
-          </div>
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> seed <span class="fl">--batch</span> <span class="st">"Summer 2025"</span></div>
-            <div class="cmd-desc">Seed only specific batches (comma-separated)</div>
-          </div>
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> seed-a16z</div>
-            <div class="cmd-desc">Pull a16z portfolio into the same SQLite database</div>
-          </div>
+      <div class="inline-stats font-mono">
+        <div class="stat-item">
+          <span class="dollar">$</span>
+          <span class="val">5,800+</span>
+          <span class="label">companies</span>
+        </div>
+        <div class="stat-item">
+          <span class="dollar">$</span>
+          <span class="val">0</span>
+          <span class="label">API keys needed</span>
+        </div>
+        <div class="stat-item">
+          <span class="dollar">$</span>
+          <span class="val">&lt;1ms</span>
+          <span class="label">query latency</span>
         </div>
       </div>
 
-      <div class="cmd-group fade-in-up">
-        <h3>Query &amp; Filter</h3>
-        <div class="cmd-list">
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> search <span class="st">"ai agent"</span></div>
-            <div class="cmd-desc">Full-text search across all companies</div>
-          </div>
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> companies <span class="fl">--is-hiring</span> true <span class="fl">--industry</span> <span class="st">Fintech</span></div>
-            <div class="cmd-desc">Filter with multiple predicates</div>
-          </div>
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> company <span class="fl">--slug</span> stripe</div>
-            <div class="cmd-desc">Look up a single company by slug or ID</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="cmd-group fade-in-up">
-        <h3>Insights</h3>
-        <div class="cmd-list">
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> stats</div>
-            <div class="cmd-desc">Portfolio-wide stats: totals, hiring count, industry breakdown</div>
-          </div>
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> batches</div>
-            <div class="cmd-desc">List all distinct YC batches in the database</div>
-          </div>
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> digest <span class="fl">--format</span> json</div>
-            <div class="cmd-desc">Daily digest: latest batch, hiring companies</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="cmd-group fade-in-up">
-        <h3>Output Formats</h3>
-        <div class="cmd-list">
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> companies <span class="fl">--format</span> table</div>
-            <div class="cmd-desc">Human-readable terminal table (default)</div>
-          </div>
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> companies <span class="fl">--format</span> json <span class="fl">--agent</span></div>
-            <div class="cmd-desc">Compact JSON for LLM tool use</div>
-          </div>
-          <div class="cmd-item">
-            <div class="cmd-code"><span class="kw">startup-find</span> companies <span class="fl">--format</span> csv</div>
-            <div class="cmd-desc">CSV output for spreadsheets and pandas</div>
-          </div>
-        </div>
+      <div class="hero-actions font-mono">
+        <a href="#install" class="btn btn-primary">
+          Install Now
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+        <a href="https://github.com/princepal9120/startup-find" target="_blank" class="btn btn-outline">
+          View on GitHub
+        </a>
+        <a href="https://github.com/KonstantinMB/exploreyc" target="_blank" class="ph-badge">
+          <span class="text-muted">Inspired by —</span> <span style="font-weight:600">ExploreYC</span>
+        </a>
       </div>
     </div>
-  </div>
-</section>
 
-<!-- HTTP API -->
-<section id="api">
-  <div class="wrap">
-    <div class="api-grid">
-      <div class="fade-in-up">
-        <div class="section-label">HTTP API</div>
-        <h2 class="section-title">Use from any language</h2>
-        <p class="section-sub">Run a local server and access startup data from Ruby, Go, Node, or curl.</p>
-        <div style="margin-top:28px">
-          <div class="code-block">
-            <span class="prompt">$</span> <span class="cmd">startup-find serve <span style="color:var(--accent2)">--port</span> 8731</span><br>
-            <span style="color:var(--text-muted)"># Listening on http://127.0.0.1:8731</span><br><br>
-            <span class="prompt">$</span> <span class="cmd">curl <span style="color:var(--green)">"localhost:8731/search?q=ai+agent"</span></span>
+    <!-- Quick Start Terminal -->
+    <div class="animate-on-scroll">
+      <div class="terminal-block font-mono">
+        <code>
+          <span class="term-prompt">$</span> <span class="term-cmd">pip install startup-find</span><br>
+          <span class="term-prompt">$</span> <span class="term-cmd">startup-find seed</span> <span class="term-out"># Pulls public Algolia data into local SQLite</span><br>
+          <span class="term-prompt">$</span> <span class="term-cmd">startup-find search <span class="term-str">"ai agent"</span> <span class="term-arg">--limit</span> 5</span><br>
+          <span class="term-out">  - Cognition</span> <span class="term-badge">[S24]</span> <span class="term-out">(AI) · SF</span><br>
+          <span class="term-out">  - Factory</span> <span class="term-badge">[W24]</span> <span class="term-out">(Dev Tools) · SF</span><br>
+          <span class="term-out">  - Induced AI</span> <span class="term-badge">[S23]</span> <span class="term-out">(AI) · SF · hiring</span><br>
+          <span class="term-out">  - Lutra AI</span> <span class="term-badge">[W24]</span> <span class="term-out">(AI) · remote</span><br>
+          <span class="term-prompt">$</span> <span class="term-cmd">_</span>
+        </code>
+      </div>
+    </div>
+
+    <!-- Features Bento Grid -->
+    <section id="features" class="animate-on-scroll">
+      <div class="section-header font-mono">
+        <span class="text-muted">$</span>
+        <h2>Why startup-find</h2>
+      </div>
+
+      <div class="bento-grid">
+        <div class="hacker-card glow-orange">
+          <svg class="card-icon" style="color:var(--primary)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          <h3 class="card-title font-mono">100% Local SQLite</h3>
+          <p class="card-desc font-mono">All data lives on your machine. Nothing leaves your computer. No accounts, no telemetry.</p>
+          <div class="card-action text-primary font-mono">secure <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
+        </div>
+
+        <div class="hacker-card glow-blue">
+          <svg class="card-icon" style="color:var(--color-blue)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <h3 class="card-title font-mono">Blazing Fast</h3>
+          <p class="card-desc font-mono">Sub-millisecond offline queries. Filter by batch, industry, country, or hiring instantly.</p>
+          <div class="card-action font-mono" style="color:var(--color-blue)">fast <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
+        </div>
+
+        <div class="hacker-card glow-green">
+          <svg class="card-icon" style="color:var(--color-emerald)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+          <h3 class="card-title font-mono">Agent-Friendly</h3>
+          <p class="card-desc font-mono">Pass --agent for compact JSON stdout. Clean exit codes for LLM tool use.</p>
+          <div class="card-action font-mono" style="color:var(--color-emerald)">integrate <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
+        </div>
+
+        <div class="hacker-card glow-purple">
+          <svg class="card-icon" style="color:var(--color-violet)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <h3 class="card-title font-mono">HTTP REST API</h3>
+          <p class="card-desc font-mono">Run `startup-find serve` to expose a local HTTP server accessible from any language.</p>
+          <div class="card-action font-mono" style="color:var(--color-violet)">serve <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Commands List -->
+    <section id="commands" class="animate-on-scroll">
+      <div class="section-header font-mono">
+        <span class="text-muted">$</span>
+        <h2>Essential Commands</h2>
+      </div>
+
+      <div class="bento-grid" style="grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));">
+        <!-- Card 1 -->
+        <div class="hacker-card glow-orange">
+          <h3 class="card-title font-mono mb-4 text-muted" style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.05em">Query & Filter</h3>
+          <div class="terminal-block" style="margin:0; flex:1">
+            <code>
+              <span class="term-prompt">$</span> <span class="term-cmd">startup-find companies</span><br>
+              &nbsp;&nbsp;<span class="term-arg">--is-hiring</span> true<br>
+              &nbsp;&nbsp;<span class="term-arg">--batch</span> <span class="term-str">"Summer 2024"</span><br>
+              &nbsp;&nbsp;<span class="term-arg">--industry</span> <span class="term-str">Fintech</span><br>
+              <br>
+              <span class="term-prompt">$</span> <span class="term-cmd">startup-find company <span class="term-arg">--slug</span> stripe</span>
+            </code>
+          </div>
+        </div>
+        
+        <!-- Card 2 -->
+        <div class="hacker-card glow-blue">
+          <h3 class="card-title font-mono mb-4 text-muted" style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.05em">Output Formats</h3>
+          <div class="terminal-block" style="margin:0; flex:1">
+            <code>
+              <span class="term-out"># Human-readable table (default)</span><br>
+              <span class="term-prompt">$</span> <span class="term-cmd">startup-find search <span class="term-str">"ai"</span> <span class="term-arg">--format</span> table</span><br>
+              <br>
+              <span class="term-out"># JSON for agents or jq piping</span><br>
+              <span class="term-prompt">$</span> <span class="term-cmd">startup-find stats <span class="term-arg">--format</span> json <span class="term-arg">--agent</span></span><br>
+              <br>
+              <span class="term-out"># CSV for spreadsheets</span><br>
+              <span class="term-prompt">$</span> <span class="term-cmd">startup-find batches <span class="term-arg">--format</span> csv</span>
+            </code>
           </div>
         </div>
       </div>
+    </section>
 
-      <div class="api-routes fade-in-up">
-        <div class="api-route"><span class="method">GET</span><span class="api-path">/health</span><span class="api-desc">Liveness check</span></div>
-        <div class="api-route"><span class="method">GET</span><span class="api-path">/stats</span><span class="api-desc">Portfolio stats</span></div>
-        <div class="api-route"><span class="method">GET</span><span class="api-path">/batches</span><span class="api-desc">Distinct batches</span></div>
-        <div class="api-route"><span class="method">GET</span><span class="api-path">/companies</span><span class="api-desc">Filter &amp; paginate</span></div>
-        <div class="api-route"><span class="method">GET</span><span class="api-path">/search</span><span class="api-desc">Full-text search</span></div>
-        <div class="api-route"><span class="method">GET</span><span class="api-path">/company</span><span class="api-desc">Single company</span></div>
+    <!-- Footer Terminal Box -->
+    <div class="footer-terminal font-mono animate-on-scroll">
+      <div class="prompt-line">
+        <span class="text-primary">&gt;</span>
+        <span class="text-muted">Ready to explore?</span>
+      </div>
+      <div class="footer-links">
+        <a href="#install" class="text-primary">$ get started</a>
+        <a href="https://github.com/princepal9120/startup-find" target="_blank" class="text-primary">$ view source</a>
+        <a href="https://pypi.org/project/startup-find/" target="_blank" class="text-primary">$ pip install</a>
       </div>
     </div>
-  </div>
-</section>
+  </main>
 
-<!-- Install -->
-<section id="install">
-  <div class="wrap">
-    <div class="section-head fade-in-up">
-      <div class="section-label">Get started</div>
-      <h2 class="section-title">Up and running in 60 seconds</h2>
-      <p class="section-sub">Install from PyPI or clone from GitHub. Zero config.</p>
-    </div>
+  <script>
+    // Intersection Observer for scroll animations
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
 
-    <div class="install-box fade-in-up">
-      <div class="install-step">
-        <div class="step-num">1</div>
-        <div class="step-body">
-          <h4>Install</h4>
-          <div class="code-block" id="cb-install">
-            <button class="copy-btn" onclick="copyBlock('cb-install', this)">copy</button>
-            <span class="prompt">$</span> <span class="cmd">pip install startup-find</span>
-          </div>
-          <p style="margin-top:8px;font-size:0.8rem;color:var(--text-muted)">Or from source: <span class="mono" style="font-size:0.8em">git clone &amp;&amp; pip install -e .</span></p>
-        </div>
-      </div>
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
 
-      <div class="install-step">
-        <div class="step-num">2</div>
-        <div class="step-body">
-          <h4>Seed (one-time)</h4>
-          <div class="code-block" id="cb-seed">
-            <button class="copy-btn" onclick="copyBlock('cb-seed', this)">copy</button>
-            <span class="prompt">$</span> <span class="cmd"><span class="subcmd">startup-find</span> seed          <span style="color:var(--text-muted)"># YC &mdash; public Algolia, no key</span></span><br>
-            <span class="prompt">$</span> <span class="cmd"><span class="subcmd">startup-find</span> seed-a16z     <span style="color:var(--text-muted)"># a16z portfolio</span></span>
-          </div>
-        </div>
-      </div>
-
-      <div class="install-step">
-        <div class="step-num">3</div>
-        <div class="step-body">
-          <h4>Query offline, forever</h4>
-          <div class="code-block" id="cb-query">
-            <button class="copy-btn" onclick="copyBlock('cb-query', this)">copy</button>
-            <span class="prompt">$</span> <span class="cmd"><span class="subcmd">startup-find</span> search <span class="str">"ai agent"</span> <span class="arg">--limit</span> 10 <span class="arg">--format</span> json</span><br>
-            <span class="prompt">$</span> <span class="cmd"><span class="subcmd">startup-find</span> companies <span class="arg">--is-hiring</span> true <span class="arg">--batch</span> <span class="str">"Summer 2025"</span></span><br>
-            <span class="prompt">$</span> <span class="cmd"><span class="subcmd">startup-find</span> digest <span class="arg">--agent</span></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Footer -->
-<footer>
-  <div class="wrap">
-    <div class="footer-logo">startup<span>-find</span></div>
-    <p>Inspired by <a href="https://www.exploreyc.com/" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">ExploreYC</a> &middot; Ergonomics by <a href="https://github.com/jackwener/opencli" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none">opencli</a> &middot; MIT License</p>
-    <div class="footer-links">
-      <a href="https://github.com/princepal9120/startup-find" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://pypi.org/project/startup-find/" target="_blank" rel="noopener">PyPI</a>
-      <a href="https://github.com/princepal9120/startup-find/blob/main/LICENSE" target="_blank" rel="noopener">License</a>
-    </div>
-  </div>
-</footer>
-
-<script>
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in-view'); });
-}, { threshold: 0.12 });
-document.querySelectorAll('.fade-in-up').forEach(el => observer.observe(el));
-
-function copyBlock(id, btn) {
-  const block = document.getElementById(id);
-  const text = block.innerText
-    .replace(/^copy\n/, '')
-    .split('\n').map(l => l.replace(/^\$ /, '').trim()).filter(Boolean).join('\n');
-  navigator.clipboard.writeText(text).then(() => {
-    btn.textContent = 'copied!';
-    btn.classList.add('copied');
-    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
-  }).catch(() => {});
-}
-
-const lines = [
-  { type: 'cmd',  html: '<span class="t-prompt">&gt;</span> <span class="t-kw">startup-find</span> <span class="t-cmd">seed</span>' },
-  { type: 'out',  html: '<span class="t-muted">  seeded 1000 companies (page 1)</span>' },
-  { type: 'out',  html: '<span class="t-muted">  seeded 2000 companies (page 2)</span>' },
-  { type: 'out',  html: '<span style="color:var(--green)">DONE: 5803 YC companies stored &check;</span>' },
-  { type: 'blank' },
-  { type: 'cmd',  html: '<span class="t-prompt">&gt;</span> <span class="t-kw">startup-find</span> <span class="t-cmd">search</span> <span class="t-str">"ai agent"</span> <span class="t-arg">--limit 5</span>' },
-  { type: 'out',  html: '<span class="t-muted">  - </span><span class="t-cmd">Cognition</span> <span class="t-badge">[S24]</span> <span class="t-muted">(AI) &middot; SF</span>' },
-  { type: 'out',  html: '<span class="t-muted">  - </span><span class="t-cmd">Factory</span> <span class="t-badge">[W24]</span> <span class="t-muted">(Dev Tools) &middot; SF</span>' },
-  { type: 'out',  html: '<span class="t-muted">  - </span><span class="t-cmd">Induced AI</span> <span class="t-badge">[S23]</span> <span class="t-muted">(AI) &middot; </span><span class="t-str">hiring</span>' },
-  { type: 'out',  html: '<span class="t-muted">  - </span><span class="t-cmd">Lutra AI</span> <span class="t-badge">[W24]</span> <span class="t-muted">(AI) &middot; remote</span>' },
-  { type: 'blank' },
-  { type: 'cmd',  html: '<span class="t-prompt">&gt;</span> <span class="t-kw">startup-find</span> <span class="t-cmd">stats</span>' },
-  { type: 'out',  html: '<span class="t-muted">  total: </span><span class="t-num">5803</span><span class="t-muted">  hiring: </span><span class="t-num">342</span><span class="t-muted">  batches: </span><span class="t-num">47</span>' },
-  { type: 'cursor' }
-];
-
-const body = document.getElementById('terminal-body');
-function renderTerminal() {
-  body.innerHTML = '';
-  let i = 0;
-  function next() {
-    if (i >= lines.length) return;
-    const l = lines[i++];
-    const div = document.createElement('div');
-    if (l.type === 'blank') div.innerHTML = '&nbsp;';
-    else if (l.type === 'cursor') div.innerHTML = '<span class="t-prompt">&gt;</span> <span class="t-cursor"></span>';
-    else div.innerHTML = l.html;
-    body.appendChild(div);
-    body.scrollTop = body.scrollHeight;
-    setTimeout(next, l.type === 'cmd' ? 90 : 45);
-  }
-  next();
-  setTimeout(() => { body.innerHTML = ''; setTimeout(renderTerminal, 600); }, 9000);
-}
-setTimeout(renderTerminal, 800);
-</script>
+    document.querySelectorAll('.animate-on-scroll').forEach((el) => {
+      observer.observe(el);
+    });
+  </script>
 </body>
 </html>
