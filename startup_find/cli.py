@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 from .__version__ import __version__
 from .db import (DEFAULT_DB, q_companies, q_stats, q_batches, q_company, coerce,
                ensure_seeded)
-from . import yc, a16z, serve
+from . import yc, a16z, speedrun, serve
 
 
 def _emit(data, args):
@@ -102,6 +102,12 @@ def cmd_seed_a16z(args):
     print(f"Seeding a16z portfolio into {args.db} ...", file=sys.stderr)
     n = a16z.seed(args.db, limit=args.limit)
     print(f"DONE: {n} a16z companies stored in {args.db}")
+
+
+def cmd_seed_speedrun(args):
+    print(f"Seeding speedrun talent network into {args.db} ...", file=sys.stderr)
+    n = speedrun.seed(args.db, limit=args.limit)
+    print(f"DONE: {n} speedrun companies stored in {args.db}")
 
 
 def cmd_companies(args):
@@ -191,6 +197,10 @@ def build_parser():
     s = sub.add_parser("seed-a16z", help="Pull a16z portfolio into local SQLite", parents=[sub_parent])
     s.add_argument("--limit", type=int, default=None, help="only first N (smoke test)")
     s.set_defaults(func=cmd_seed_a16z)
+
+    s = sub.add_parser("seed-speedrun", help="Pull speedrun talent network companies into local SQLite", parents=[sub_parent])
+    s.add_argument("--limit", type=int, default=None, help="only first N")
+    s.set_defaults(func=cmd_seed_speedrun)
 
     s = sub.add_parser("companies", help="List/filter companies", parents=[sub_parent])
     s.add_argument("--limit", type=int, default=50)
