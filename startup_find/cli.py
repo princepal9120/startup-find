@@ -22,6 +22,8 @@ from .__version__ import __version__
 from .db import (DEFAULT_DB, q_companies, q_stats, q_batches, q_company, coerce,
                ensure_seeded)
 from . import yc, a16z, speedrun, serve
+from .fit import (cmd_fit_score, cmd_signals, cmd_founder_email,
+                  cmd_outreach_draft, DEFAULT_FIT_AXES, rank_by_fit)
 
 
 def _emit(data, args):
@@ -150,14 +152,24 @@ def cmd_digest(args):
     stats = q_stats(args.db)
     batches = q_batches(args.db)
     newest = batches[0] if batches else None
-    hiring = (q_companies(args.db, args.limit, 0, newest, None, None, True, None, None, None)
-              if newest else [])
+    # Pick newest batch that actually has hiring companies
+    hiring = []
+    chosen_batch = None
+    for b in batches:
+        hiring = q_companies(args.db, max(args.limit * 20, 500), 0, b,
+                             None, None, True, None, None, None)
+        if hiring:
+            chosen_batch = b
+            break
+    hiring_ranked = rank_by_fit(hiring,
+                                [a.strip() for a in args.profile.split(",") if a.strip()]
+                                if args.profile else DEFAULT_FIT_AXES)[: args.limit]
     out = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "total_companies": stats["total"],
         "hiring_now": stats["hiring"],
-        "latest_batch": newest,
-        "hiring_in_latest_batch": [coerce(c) for c in hiring],
+        "latest_batch": chosen_batch or newest,
+        "hiring_in_latest_batch": hiring_ranked,
     }
     _emit(out, args)
 
@@ -232,9 +244,44 @@ def build_parser():
     g.add_argument("--slug")
     s.set_defaults(func=cmd_company)
 
-    s = sub.add_parser("digest", help="Daily agent digest (offline)", parents=[sub_parent])
+    s = sub.add_parser("digest", help="Daily agent digest (offline, fit-ranked)", parents=[sub_parent])
     s.add_argument("--limit", type=int, default=15)
+    s.add_argument("--profile", default=None,
+                   help="comma-separated fit axes (default: built-in AI platform profile)")
     s.set_defaults(func=cmd_digest)
+
+    s = sub.add_parser("fit-score", help="Rank companies by fit-profile relevance", parents=[sub_parent])
+    s.add_argument("--profile", default=None,
+                   help="comma-separated fit axes (default: built-in AI platform profile)")
+    s.add_argument("--limit", type=int, default=30)
+    s.add_argument("--source", default=None)
+    s.add_argument("--batch")
+    s.add_argument("--industry")
+    s.add_argument("--country")
+    s.add_argument("--is-hiring", dest="is_hiring", type=lambda x: x.lower() == "true", default=None)
+    s.add_argument("--search")
+    s.set_defaults(func=lambda a: _emit(cmd_fit_score(a, q_companies, ensure_seeded, coerce) or [], a))
+
+    s = sub.add_parser("signals", help="Filter by hiring signals (funded, early stage, etc.)", parents=[sub_parent])
+    s.add_argument("--limit", type=int, default=30)
+    s.add_argument("--source", default=None)
+    s.add_argument("--batch")
+    s.add_argument("--industry")
+    s.add_argument("--country")
+    s.add_argument("--search")
+    s.add_argument("--recent-batch", default=None, help="flag companies in this batch as 'recent'")
+    s.set_defaults(func=lambda a: _emit(cmd_signals(a, q_companies, ensure_seeded, coerce) or [], a))
+
+    s = sub.add_parser("founder-email", help="Look up founder email via web (agent-reach pattern)", parents=[sub_parent])
+    s.add_argument("--slug", required=True)
+    s.add_argument("--profile", default=None, help="comma-separated fit axes for relevance scoring")
+    s.set_defaults(func=lambda a: _emit(cmd_founder_email(a, q_company, ensure_seeded, coerce) or {}, a))
+
+    s = sub.add_parser("outreach-draft", help="Generate short founder email (Nikhil formula)", parents=[sub_parent])
+    s.add_argument("--slug", required=True)
+    s.add_argument("--resume-file", default=None, help="path to resume facts text file")
+    s.add_argument("--profile", default=None, help="comma-separated fit axes for relevance scoring")
+    s.set_defaults(func=lambda a: _emit(cmd_outreach_draft(a, q_company, ensure_seeded, coerce) or {}, a))
 
     s = sub.add_parser("serve", help="Local HTTP API for non-Python agents", parents=[sub_parent])
     s.add_argument("--host", default="127.0.0.1")

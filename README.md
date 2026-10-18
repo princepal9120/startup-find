@@ -34,7 +34,12 @@ $ startup-find search "ai agent" --limit 5 --format json
 
 - 🏠 **Local-first** — all data lives in `~/.startup-find/yc.db` (SQLite), nothing phones home
 - ⚡ **Offline queries** — seed once, query forever with no internet needed
-- 🤖 **Agent-ready** — `--format json` + `--agent` flag for clean LLM tool use
+- 🤖 **Agent-ready** — `--format json` \+ `--agent` flag for clean LLM tool use
+- 🎯 **Fit-profile scoring** — `fit-score` ranks startups by relevance to YOUR experience axes (Nikhil Sheoran "relevant fit" model), not just keywords
+- 📡 **Hiring signals** — `signals` flags funded / recent batch / early-stage / top-company companies
+- ✉️ **Founder email lookup** — `founder-email` finds direct founder emails (Jina reader + Exa search) to bypass job portals
+- 📝 **Outreach drafts** — `outreach-draft` generates short 3-line founder emails: what you built → why this company → 15-min chat
+- 🐦 **agent-reach integration** — pair with `rtk twitter` / `rdk reddit` / Exa for live verification and founder research
 - 🌐 **HTTP server** — `startup-find serve` exposes a REST API for non-Python agents
 - 🔍 **Full-text search** — fast FTS5-powered search across company names and descriptions
 - 📊 **Rich filters** — batch, industry, hiring status, location, and more
