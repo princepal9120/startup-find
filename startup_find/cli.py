@@ -260,6 +260,8 @@ def build_parser():
     s.add_argument("--country")
     s.add_argument("--is-hiring", dest="is_hiring", type=lambda x: x.lower() == "true", default=None)
     s.add_argument("--search")
+    s.add_argument("--min-score", type=int, default=0, help="drop companies below this fit score")
+    s.add_argument("--remote", action="store_true", help="only remote-friendly companies")
     s.set_defaults(func=lambda a: _emit(cmd_fit_score(a, q_companies, ensure_seeded, coerce) or [], a))
 
     s = sub.add_parser("signals", help="Filter by hiring signals (funded, early stage, etc.)", parents=[sub_parent])
@@ -270,6 +272,7 @@ def build_parser():
     s.add_argument("--country")
     s.add_argument("--search")
     s.add_argument("--recent-batch", default=None, help="flag companies in this batch as 'recent'")
+    s.add_argument("--remote", action="store_true", help="only remote-friendly companies")
     s.set_defaults(func=lambda a: _emit(cmd_signals(a, q_companies, ensure_seeded, coerce) or [], a))
 
     s = sub.add_parser("founder-email", help="Look up founder email via web (agent-reach pattern)", parents=[sub_parent])

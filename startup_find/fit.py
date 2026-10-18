@@ -211,6 +211,22 @@ def draft_outreach(row: dict, resume_facts: str | None = None) -> str:
     website = row.get("website") or ""
     fit_matches = row.get("fit_matches") or []
 
+    # Personalize greeting with founder name from DB
+    founders_raw = row.get("founders") or ""
+    founder_name = ""
+    if founders_raw:
+        try:
+            founders = json.loads(founders_raw) if founders_raw.startswith("[") else [founders_raw]
+            if isinstance(founders, list) and founders:
+                first = founders[0]
+                if isinstance(first, dict):
+                    founder_name = first.get("name", "")
+                elif isinstance(first, str):
+                    founder_name = first.split("/")[-1].strip()
+        except (json.JSONDecodeError, TypeError):
+            founder_name = founders_raw.split(",")[0].strip()
+    greeting = f"Hi {founder_name.split()[0]}," if founder_name else "Hi,"
+
     facts = resume_facts or RESUME_FACTS_DEFAULT
 
     # Build relevance sentence from fit matches
@@ -221,7 +237,7 @@ def draft_outreach(row: dict, resume_facts: str | None = None) -> str:
 
     draft = f"""Subject: Quick question about {name}
 
-Hi [Founder Name],
+{greeting}
 
 I came across {name}{f' ({website})' if website else ''} and was immediately interested.
 
@@ -263,6 +279,12 @@ def cmd_fit_score(args, q_companies_func, ensure_seeded_func, coerce_func):
         return None
 
     ranked = rank_by_fit(pool, axes)  # q_companies already returns coerced dicts
+    if getattr(args, "min_score", 0):
+        ranked = [r for r in ranked if r["fit_score"] >= args.min_score]
+    if getattr(args, "remote", False):
+        ranked = [r for r in ranked if "remote" in (
+            (r.get("all_locations") or "") + " " + (r.get("long_description") or "")
+        ).lower()]
     return ranked[: args.limit]
 
 
@@ -298,6 +320,10 @@ def cmd_signals(args, q_companies_func, ensure_seeded_func, coerce_func):
         row["signals"] = signals
         results.append(row)
 
+    if getattr(args, "remote", False):
+        results = [r for r in results if "remote" in (
+            (r.get("all_locations") or "") + " " + (r.get("long_description") or "")
+        ).lower()]
     return results
 
 
